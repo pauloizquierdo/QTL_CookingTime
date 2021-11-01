@@ -1,0 +1,367 @@
+---
+title: "TZRIL_Population"
+author: "Paulo Izquierdo"
+date: "2/10/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+```{r libraries}
+library(corrplot)
+library(RColorBrewer)
+library(ggpubr)
+library(ggpmisc)
+library(beanplot)
+library(sommer)
+library(tidyverse)
+```
+
+## Figure 1. Pearson's correlation 
+
+Input:
+```{r Correlation}
+pheno <- read.table("TZ_phenotype_wo_outliers_2020.txt", 
+                    header = T)
+pheno_id <- pheno[c(2:21)] 
+head(pheno_id) 
+
+cor_pearson <- cor(pheno_id, y = NULL, use = "na.or.complete",
+              method = c("pearson"))
+
+####### significance test
+par(mar = c(5, 5, 5, 5))
+corrplot.mixed(cor_pearson,  
+               tl.pos = c("lt"),             
+               lower = "number",
+               upper.col = brewer.pal(n = 10, 
+               name = "RdYlBu"),
+               number.cex = 0.6,
+               tl.cex = 0.6,
+               tl.col = "black",
+               upper = "ellipse",
+               number.digits = 1,
+               lower.col = "black")
+
+
+```
+
+
+**Figure 1.** Pearson’s correlation between the traits evaluated in Arusha (Ar) and Morogoro (Mo) in Tanzania in 2016 (16) and 2017 (17) in the TZ-27/TZ-37 (TT) RIL population.  Cooking time (CT), seed weight (SW), water uptake (WU), seed coat percentage (SCP), and protein concentration (Pro).
+
+## Figure 2. This graphic was made in MapChart
+
+**Figure 2.** QTL map for cooking time (CT), seed weight (SW), water uptake (WU), seed coat percentage (SCP), and protein concentration (Pro) in the TZ-27/TZ-37 (TT) RIL population.  The ruler on the left indicates size in cM.  The marker names are followed by location and year. 
+
+## Figure 3. Boxplots robust QTL
+
+Input:
+
+```{r boxplots 3-ct QTLs}
+CT_3QTL <- read.table("CT_imputated_3QTLs.txt", 
+                      header = T)
+head(CT_3QTL)
+
+CT_3QTL$QTLs <- factor(CT_3QTL$QTLs, levels = c("QTLs-0",
+          "QTLs-1", "QTLs-2", "QTLs-3"
+            ))
+
+p <-qplot( x=QTLs, y=ct, data=CT_3QTL,  
+       geom=c("boxplot"), 
+       fill=QTLs) + 
+  
+  ylab("Cooking Time (min)") +
+    theme(text = element_text(size=10),
+        axis.text.x = element_text(angle=90, hjust=1)) +
+    theme(plot.title = element_text(hjust=0.5)) +
+  theme(text = element_text(size=15, color = "black"))
+
+p + facet_grid(CT_3QTL$location ~ CT_3QTL$year)
+
+
+```
+
+
+**Figure 3a.** Phenotypic effect of presence or absence of three robust cooking time QTL (CT3.1, CT6.1, CT11.2) on the average cooking times of RILs carrying either 0,1,2, or 3 of the QTL in Arusha 2016, Arusha 2017, Morogoro 2016, and Morogoro 2017.  
+
+```{r boxplots 3-Protein QTLs}
+pro_3QTL <- read.table("Pro_imputated_3QTLs.txt", 
+                      header = T)
+
+pro_3QTL$QTLs <- factor(pro_3QTL$QTLs, levels = c("QTLs-0",
+          "QTLs-1", "QTLs-2", "QTLs-3"
+            ))
+
+q <-qplot( x=QTLs, y=Pro, data=pro_3QTL,  
+       geom=c("boxplot"), 
+       fill=QTLs) + 
+  
+  ylab("Protein (% in Cooked seeds)") +
+    theme(text = element_text(size=10),
+        axis.text.x = element_text(angle=90, hjust=1)) +
+    theme(plot.title = element_text(hjust=0.5)) +
+  theme(text = element_text(size=15, color = "black"))
+
+q + facet_grid(pro_3QTL$location ~ pro_3QTL$year)
+
+
+```
+
+
+**Figure 3b.** Phenotypic effect of presence or absence of three cooked seed protein concentration QTL (Pro3.1, Pro6.1, Pro11.1) that co-localized with cooking time QTL on the average protein concentration of RILs carrying either 0,1,2, or 3 of the QTL in Arusha 2016, Arusha 2017, Morogoro 2016, and Morogoro 2017.  
+
+
+## Figure 4. Validation Michigan 
+
+Input:
+```{r plot 10-CT QTLs}
+theme_set(
+  theme_bw() +
+    theme(legend.position = "top")
+)
+
+SV18 <- read.table("CT_imputated_10QTLs_SV18.txt", 
+                   header = T)
+head(SV18)
+
+sv18val <- ggplot(SV18, aes(QTLs, ct_mean_SV18)) +
+  ylab("Cooking Time (min)") +
+  geom_point(aes(color = source), size = 3, alpha = 0.6) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800", "#FC4E07")) +
+  scale_fill_manual(values = c("#00AFBB", "#E7B800", "#FC4E07"))+
+  facet_wrap(~source)
+
+formula <- y ~ x
+sv18val + 
+  stat_smooth( aes(color = source, fill = source), 
+               method = "lm") +
+  stat_cor(aes(color = source), label.y = 74.4)+
+  xlim("1", "2", "3", "4","5", "6", "7", "8","9", "10")
+
+
+```
+
+
+**Figure 4.** Phenotypic effect of 10 cooking time QTL in 30 selected RILs grown in Michigan in 2018 on average cooking times of lines carrying 0-12 of the QTL regions from either the fast cooking parental source (TZ-37) or the slow cooking parental source (TZ-37).  The r values indicate the Pearson correlation coefficient between the number of QTL and the average cooking time value for those lines. 
+
+## Figure S1. Temperatures and rainfall 
+
+This graphic was made by Matt
+
+
+## Figure S2. Beanplots
+
+Input:
+
+```{r beanplots with outliers}
+beans_plot <- read.table("TZ_phenotype_wo_outliers_beanplot_2020.txt", header = T)
+
+head(beans_plot)
+
+par(mfrow =c(3,2)) 
+par(mar=c(2,4,1,1))
+### Cooking Time
+beanplot(beans_plot$CT ~ interaction(beans_plot$year, beans_plot$location), 
+         ylab = "Coking Time (min)", 
+         log="", 
+         side="both",col = list("lightgoldenrod1", 
+                                c("lightsteelblue")),
+         what=c(0,1,1,0))
+    
+legend("bottomright", bty="n",c("2016", "2017"),
+         fill = c("lightgoldenrod1", "lightsteelblue"))
+legend("topright", bty="n",c("TZ27", "TZ37"),
+       fill = c("red", "green3"))
+legend("topleft", bty="n",c("A"), text.font = 2) 
+segments(x0 = 1, x1 = 0.9, y0 = 66.9 , col = "red", lwd = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 35.6, col = "green3", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 41, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 27.7, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 62.9, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 33.3, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 70.4, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 35.3, col = "green3", lwd = 2)
+
+
+### WU
+beanplot(beans_plot$WU ~ interaction(beans_plot$year, beans_plot$location), 
+         ylab = "Water Uptake", 
+         log="", 
+         side="both",col = list("lightgoldenrod1", 
+                                c("lightsteelblue")),
+         what=c(0,1,1,0))
+    
+legend("bottomright", bty="n",c("2016", "2017"),
+         fill = c("lightgoldenrod1", "lightsteelblue"))
+legend("topright", bty="n",c("TZ27", "TZ37"),
+       fill = c("red", "green3"))
+legend("topleft", bty="n",c("B"), text.font = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 97.9  , col = "red", lwd = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 93.1, col = "green3", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 91.1, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 98.3, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 105.1, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 97.4, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 100.4, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 106.2, col = "green3", lwd = 2)
+
+### SCP
+beanplot(beans_plot$SCP ~ interaction(beans_plot$year, beans_plot$location), 
+         ylab = "Seed Coat Percentage (%)", 
+         log="", 
+         side="both",col = list("lightgoldenrod1", 
+                                c("lightsteelblue")),
+         what=c(0,1,1,0))
+    
+legend("bottomright", bty="n",c("2016", "2017"),
+         fill = c("lightgoldenrod1", "lightsteelblue"))
+legend("topright", bty="n",c("TZ27", "TZ37"),
+       fill = c("red", "green3"))
+legend("topleft", bty="n",c("C"), text.font = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 10.1, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 7.9, col = "green3", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 9.6, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 8.4, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 10.4, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 8.2, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 11.6, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 9.2, col = "green3", lwd = 2)
+
+### SW
+beanplot(beans_plot$SW ~ interaction(beans_plot$year, beans_plot$location), 
+         ylab = "100 Seed Weigth (g)", 
+         ylim = c(10,70),
+         log="", 
+         side="both",col = list("lightgoldenrod1", 
+                                c("lightsteelblue")),
+         what=c(0,1,1,0))
+    
+legend("bottomright", bty="n",c("2016", "2017"),
+         fill = c("lightgoldenrod1", "lightsteelblue"))
+legend("topright", bty="n",c("TZ27", "TZ37"),
+       fill = c("red", "green3"))
+legend("topleft", bty="n",c("D"), text.font = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 36.8, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 50, col = "green3", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 47.5, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 57.5, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 38.2, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 51.5, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 27.5, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 41.3, col = "green3", lwd = 2)
+
+### Protein
+beanplot(beans_plot$Pro ~ interaction(beans_plot$year, beans_plot$location), 
+         ylab = "Cooked Seed Protein (%)", 
+         log="", 
+         side="both",col = list("lightgoldenrod1", 
+                                c("lightsteelblue")),
+         what=c(0,1,1,0))
+    
+legend("bottomright", bty="n",c("2016", "2017"),
+         fill = c("lightgoldenrod1", "lightsteelblue"))
+legend("topright", bty="n",c("TZ27", "TZ37"),
+       fill = c("red", "green3"))
+legend("topleft", bty="n",c("E"), text.font = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 20.8, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 0.9, y0 = 22.6, col = "green3", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 22.1, col = "red", lwd = 2)
+segments(x0 = 1, x1 = 1.1, y0 = 25.8, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 22.5, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 1.9, y0 = 24, col = "green3", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 20.8, col = "red", lwd = 2)
+segments(x0 = 2, x1 = 2.1, y0 = 24.6, col = "green3", lwd = 2)
+
+```
+
+
+**Figure S2.** Bean plots represent the distribution of a) cooking time, b) seed weight, c) water uptake, d) seed coat percentage, and e) cooked seed protein concentration for beans grown in Arusha and Morogoro in Tanzania in 2016 and 2017.  Frequencies were determined by using the adjusted means calculated with the RCBD with 2 replications.  Lines red and green indicate the values for TZ27 and TZ37 respectively.
+
+
+## Heritability 
+
+Input:
+
+```{r h2}
+dt <- read_csv("TTRIL_RawData_h2.csv") 
+names(dt)
+dt
+
+n.env <- 2 # morogoro and arusha
+
+# h2 SW
+ans_SW <- mmer(SW~1,
+             random= ~ Line + Location + Location:Line,
+             rcov= ~ units,
+             data=dt)
+
+summary(ans_SW)$varcomp
+
+h2_SW <- pin(ans_SW, h2 ~ V1 / ( V1 + (V3/n.env) + (V4/(2*n.env)) ) )
+
+# h2 CT
+ans_CT <- mmer(CT~1,
+             random= ~ Line + Location + Location:Line,
+             rcov= ~ units,
+             data=dt)
+
+summary(ans_CT)$varcomp
+
+h2_CT <- pin(ans_CT, h2 ~ V1 / ( V1 + (V3/n.env) + (V4/(2*n.env)) ) )
+
+
+
+# h2 wu
+ans_WU <- mmer(WU~1,
+             random= ~ Line + Location + Location:Line,
+             rcov= ~ units,
+             data=dt)
+
+summary(ans_WU)$varcomp
+
+h2_WU <- pin(ans_WU, h2 ~ V1 / ( V1 + (V3/n.env) + (V4/(2*n.env)) ) )
+
+# h2 scp
+ans_scp <- mmer(SCP~1,
+             random= ~ Line + Location + Location:Line,
+             rcov= ~ units,
+             data=dt)
+
+summary(ans_scp)$varcomp
+
+h2_scp <- pin(ans_scp, h2 ~ V1 / ( V1 + (V3/n.env) + (V4/(2*n.env)) ) )
+
+# h2 Pro
+ans_pro <- mmer(Pro~1,
+             random= ~ Line + Location + Location:Line,
+             rcov= ~ units,
+             data=dt)
+
+summary(ans_pro)$varcomp
+
+h2_pro <- pin(ans_pro, h2 ~ V1 / ( V1 + (V3/n.env) + (V4/(2*n.env)) ) )
+
+h2_SW
+h2_CT
+h2_WU
+h2_scp
+h2_pro
+
+
+```
+
+**Heritabilities:** 
+
+h2_SW  = 0.59
+h2_CT  = 0.42
+h2_WU  = 0.50
+h2_scp = 0.60
+h2_pro = 0.59
+
+
+
